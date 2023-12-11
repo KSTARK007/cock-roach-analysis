@@ -142,6 +142,7 @@ echo "Yarn: $(yarn --version)"
 
 git config --global --add safe.directory "*"
 git clone https://github.com/cockroachdb/cockroach
-cd cockroach
 
+sudo chmod -R 777 .cache/*
+sudo chmod -R 777 ./cockroach/
 exit 0
