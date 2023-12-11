@@ -242,8 +242,8 @@ type Reader struct {
 	// simultaneously.
 	metaBufferPool      BufferPool
 	metaBufferPoolAlloc [3]allocedBuffer
-	hit                 atomic.Int64
-	miss                atomic.Int64
+	hit                 atomic.Uint64
+	miss                atomic.Uint64
 	isDump              atomic.Bool
 	sync.Mutex
 }
@@ -646,10 +646,10 @@ func (r *Reader) SerializeCacheToFile() error {
 
 		// Compare and possibly update the values
 		if fileHits > int(r.hit.Load()) {
-			r.hit.Store(int64(fileHits))
+			r.hit.Store(uint64(fileHits))
 		}
 		if fileMisses > int(r.miss.Load()) {
-			r.miss.Store(int64(fileMisses))
+			r.miss.Store(uint64(fileMisses))
 		}
 	}
 
