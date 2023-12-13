@@ -3,19 +3,74 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from itertools import combinations
-
+miss_data = {}
+load = []
+a = []
+b = []
+c = []
+d = []
+f = []
 def process_cache_dir(cache_dir, workload_name):
     workload_dir = cache_dir / 'keys' / workload_name
-    if not workload_dir.exists() or len(list(workload_dir.glob('node*.txt'))) <= 2:
+    if not workload_dir.exists() or len(list(workload_dir.glob('node[1-3].txt'))) <= 2:
         return None
 
     datas = {}
-    for node_file in workload_dir.glob('node*.txt'):
-        with open(node_file, 'r') as f:
-            data = set(line.strip() for line in f)
+    tmp = {}
+    for node_file in workload_dir.glob('node[1-3].txt'):
+        with open(node_file, 'r') as n:
+            data = set(line.strip() for line in n)
             datas[node_file.stem] = data  # Save data with node name as key
 
+    for miss in workload_dir.glob('hit_miss_rates.txt'):
+        with open(miss, 'r') as m:
+            data = int(str(m.readlines()).split(" ")[5].split("\\")[0])
+            p_dir = str(miss.parents[0]).split("/")
+            tmp[p_dir[2]] = data
+            match p_dir[4]:
+                case "a":
+                    a.append(tmp)
+                case "b":
+                    b.append(tmp)
+                case "c":
+                    c.append(tmp)
+                case "d":
+                    d.append(tmp)
+                case "f":
+                    f.append(tmp)
+                case "load":
+                    load.append(tmp)
+    miss_data["a"] = a
+    miss_data["b"] = b
+    miss_data["c"] = c
+    miss_data["d"] = d
+    miss_data["f"] = f
+    miss_data["load"] = load
+
     return datas
+
+def plot_miss_rate(results_folder, total_dataset_keys):
+    for workload_name, datasets in miss_data.items():
+        keys = [float(list(data.keys())[0]) for data in datasets]
+        values = [list(data.values())[0] for data in datasets]
+        # print(values)
+        for i in range(len(values)):
+            values[i] = values[i] / int(total_dataset_keys)
+        # print(values)
+
+        # Sorting the data by keys to make the plot readable
+        sorted_pairs = sorted(zip(keys, values))
+        keys, values = zip(*sorted_pairs)
+
+        # Create a plot
+        plt.figure(figsize=(10, 6))
+        plt.plot(keys, values, marker='o')  # You can customize the plot with different markers, colors, etc.
+        plt.title(f'Workload: {workload_name}')
+        plt.xlabel('cache_size')
+        plt.ylabel('missrate')
+        plt.grid(True)
+        plt.savefig(results_folder / f'{workload_name}_miss_rate.png')
+        plt.show()
 
 def calculate_metrics(datas, total_dataset_keys):
     if not datas:
@@ -130,6 +185,7 @@ def main():
 
     results_folder.mkdir(exist_ok=True)
     workloads = process_run(run_dir, total_dataset_keys)
+    plot_miss_rate(results_folder, total_dataset_keys)
     plot_metrics(workloads, results_folder)
 
 if __name__ == "__main__":
